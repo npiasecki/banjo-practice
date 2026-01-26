@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Nick's Banjo Practice</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet"
+              integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65"
+              crossorigin="anonymous">
+        <link rel="icon" href="/img/banjo.svg">
+        <style type="text/css">
+            #banjo-practice-logo {
+                filter: invert(1);
+            }
+
+            #banjo-practice-note-workspace {
+                display: flex;
+            }
+
+            .banjo-practice-note {
+                border: 1px solid black;
+                font-size: 24px;
+                margin-bottom: 5px;
+                margin-right: 5px;
+                padding: 5px;
+                text-align: center;
+                transition: background-color 0.1s;
+            }
+
+            .banjo-practice-note.active {
+                background-color: yellow;
+            }
+        </style>
+    </head>
+    <body>
+        <nav class="navbar navbar-dark bg-dark">
+            <div class="container-fluid">
+                <span class="navbar-brand">
+                    <img id="banjo-practice-logo"
+                         src="/img/banjo.svg"
+                         alt="A banjo"
+                         width="30"
+                         height="30"
+                         class="d-inline-block align-bottom" />
+                    Nick's Banjo Practice
+                </span>
+                <div class="d-flex">
+                    <form class="d-flex" id="banjo-practice-tune-form">
+                        <div class="form-floating me-2">
+                            <select id="banjo-practice-tune-select" class="form-control">
+                                <option value="metronome-only">— Metronome Only —</option>
+                            </select>
+                            <label for="banjo-practice-tune-select">Tune</label>
+                        </div>
+                        <button class="btn btn-outline-light align-self-center" type="submit">Select</button>
+                    </form>
+                </div>
+                <div class="d-flex">
+                    <form class="d-flex" id="banjo-practice-metronome-form">
+                        <div class="form-floating me-2" style="min-width: 10em;">
+                            <input id="banjo-practice-metronome-beats-per-minute" class="form-control me-2"
+                                   type="number"
+                                   min="30"
+                                   max="180"
+                                   value="40"
+                                   step="10"
+                                   required />
+                            <label for="banjo-practice-metronome-beats-per-minute">Beats per minute</label>
+                        </div>
+                        <button class="btn btn-outline-light align-self-center" type="submit">Start</button>
+                        <button id="banjo-practice-metronome-stop-button"
+                                class="btn btn-outline-light align-self-center ms-2"
+                                disabled>
+                            Stop
+                        </button>
+                    </form>
+                </div>
+                <div class="d-flex">
+                    <form class="d-flex" id="banjo-practice-timer-form">
+                        <div class="form-floating me-2" style="min-width: 10em;">
+                            <input id="banjo-practice-timer-duration" class="form-control me-2" type="number" min="15"
+                                   max="60"
+                                   value="20"
+                                   required />
+                            <label for="banjo-practice-timer-duration">Duration</label>
+                        </div>
+                        <button class="btn btn-outline-light align-self-center" type="submit">Start</button>
+                    </form>
+                    <div class="vr text-light mx-3"></div>
+                    <div id="banjo-practice-timer-countdown" class="text-light align-self-center fw-bold fs-1">
+                        00:00
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <div class="container">
+            <div id="banjo-practice-tune-workspace" class="mt-3">
+                <h1 id="banjo-practice-tune-name"></h1>
+            </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"
+                integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4"
+                crossorigin="anonymous"></script>
+        <script src="https://unpkg.com/tone"></script>
+        <script type="text/javascript">
+            // Let's define a list of practice tunes
+            const tunes = [
+                {
+                    id: 'alternating-thumb-roll',
+                    name: 'Alternating Thumb Roll',
+                    beats: [
+                        {
+                            string: 3,
+                            fret: 0
+                        },
+                        {
+                            string: 2,
+                            fret: 0
+                        },
+                        {
+                            string: 5,
+                            fret: 0
+                        },
+                        {
+                            string: 1,
+                            fret: 0
+                        },
+                        {
+                            string: 4,
+                            fret: 0
+                        },
+                        {
+                            string: 2,
+                            fret: 0
+                        },
+                        {
+                            string: 5,
+                            fret: 0
+                        },
+                        {
+                            string: 1,
+                            fret: 0
+                        }
+                    ]
+                }
+            ];
+
+            // For simplicity's sake, let's give each beat a unique ID
+            for (const tune of tunes) {
+                for (const beat of tune.beats) {
+                    beat.id = crypto.randomUUID();
+                }
+            }
+
+            class Metronome {
+                constructor() {
+
+                }
+
+                start(beatsPerMinute) {
+                    this.transport = Tone.getTransport();
+                    this.transport.bpm.value = beatsPerMinute;
+
+                    const instrument = new Tone.NoiseSynth({
+                        envelope: {
+                            attack: 0.001,
+                            decay: 0.2,
+                            sustain: 0,
+                        },
+                        volume: -10
+                    }).toDestination();
+
+                    this.loop = new Tone.Loop((time) => {
+                        instrument.triggerAttack(time);
+                    }, "4n").start(0);
+
+                    this.transport.start();
+                }
+
+                stop() {
+                    if (this.loop) {
+                        this.loop.cancel();
+                        this.loop.dispose();
+                        this.loop = null;
+                    }
+
+                    if (this.transport) {
+                        this.transport.stop();
+                    }
+                }
+            }
+
+            class Timer {
+                constructor(element) {
+                    this.element = element;
+                }
+
+                start(minutes) {
+                    if (this.timer) {
+                        return;
+                    }
+
+                    this.epoch = Date.now();
+                    this.seconds = minutes * 60;
+                    this.timer = setInterval(this.whenTimerTicked.bind(this), 1000);
+                }
+
+                stop() {
+                    if (!this.timer) {
+                        return;
+                    }
+
+                    clearInterval(this.timer);
+                    this.epoch = null;
+                    this.seconds = null;
+                    this.timer = null;
+                }
+
+                whenTimerTicked() {
+                    const elapsed = Math.floor((Date.now() - this.epoch) / 1000);
+                    const remaining = this.seconds - elapsed;
+
+                    if (remaining <= 0) {
+                        this.stop();
+                        this.element.innerText = '00:00';
+                        return;
+                    }
+
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    this.element.innerText = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+            }
+
+            class TunePlayer {
+                constructor(workspaceElement) {
+                    this.pitches = [62, 59, 55, 50, 67];
+                    this.workspaceElement = workspaceElement;
+                }
+
+                getNote(string, fret) {
+                    return Tone.Frequency(this.pitches[string - 1] + fret, 'midi').toNote();
+                }
+
+                select(tune) {
+                    const {beats, name} = tune;
+
+                    // Reset our workspace
+                    this.workspaceElement.replaceChildren();
+
+                    // Add the tune name
+                    const tuneNameElement = document.createElement('h1');
+                    tuneNameElement.textContent = name;
+                    this.workspaceElement.appendChild(tuneNameElement);
+
+                    // Add our tab visualizer
+
+                    // Add our note visualizer
+                    const noteWorkspaceElement = document.createElement('div');
+                    noteWorkspaceElement.id = 'banjo-practice-note-workspace';
+
+                    for (const beat of beats) {
+                        const {id, string, fret} = beat;
+                        const noteElement = document.createElement('div');
+                        noteElement.id = `banjo-practice-note-${id}`;
+                        noteElement.className = 'banjo-practice-note';
+                        noteElement.textContent = this.getNote(string, fret);
+                        noteWorkspaceElement.appendChild(noteElement);
+                    }
+
+                    this.workspaceElement.appendChild(noteWorkspaceElement);
+
+                    // Create our instrument's strings
+                    const instruments = [];
+                    for (let i = 0; i < 5; ++i) {
+                        instruments[i] = new Tone.Synth({
+                            envelope: {
+                                attack: 0,
+                                attackCurve: 'linear',
+                                decay: 0.2,
+                                sustain: 0.5,
+                                release: 5,
+                                releaseCurve: 'exponential'
+                            }
+                        }).toDestination();
+                    }
+
+                    // Add the tune to our transport
+                    this.pattern = new Tone.Pattern(((time, beat) => {
+                        const {id, string, fret} = beat;
+                        const note = this.getNote(string, fret);
+                        instruments[string - 1].triggerAttackRelease(note, '8n', time);
+
+                        Tone.Draw.schedule(() => {
+                            const noteElement = document.getElementById(`banjo-practice-note-${id}`);
+                            noteElement.classList.add('active');
+                            setTimeout(() => {
+                                noteElement.classList.remove('active');
+                            }, 100);
+                        }, time);
+                    }), beats).start(0);
+                }
+
+                stop() {
+                    if (this.pattern) {
+                        this.pattern.cancel();
+                        this.pattern.dispose();
+                        this.pattern = null;
+                    }
+
+                    this.workspaceElement.replaceChildren();
+                }
+            }
+
+            // Set up the metronome
+            const metronome = new Metronome();
+            const metronomeForm = document.getElementById('banjo-practice-metronome-form');
+            const metronomeStopButton = document.getElementById('banjo-practice-metronome-stop-button');
+
+            metronomeForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const beatsPerMinute = document.getElementById('banjo-practice-metronome-beats-per-minute').value;
+                metronome.start(beatsPerMinute);
+                metronomeStopButton.disabled = false;
+            });
+
+            metronomeStopButton.addEventListener('click', event => {
+                event.preventDefault();
+                metronome.stop();
+                metronomeStopButton.disabled = true;
+            });
+
+            // Set up the timer
+            const timer = new Timer(document.getElementById('banjo-practice-timer-countdown'));
+            const timerForm = document.getElementById('banjo-practice-timer-form');
+            timerForm.addEventListener('submit', event => {
+                event.preventDefault();
+                const minutes = document.getElementById('banjo-practice-timer-duration').value;
+                timer.start(minutes);
+            });
+
+            // Set up the tune player
+            const tuneWorkspaceElement = document.getElementById('banjo-practice-tune-workspace');
+            const tunePlayer = new TunePlayer(tuneWorkspaceElement);
+
+            // Initialize our tunes dropdown
+            const tunesSelect = document.getElementById('banjo-practice-tune-select');
+            for (const tune of tunes) {
+                const tuneOption = document.createElement('option');
+                tuneOption.textContent = tune.name;
+                tuneOption.value = tune.id;
+                tunesSelect.appendChild(tuneOption);
+            }
+
+            // Set up the tunes form
+            const tunesForm = document.getElementById('banjo-practice-tune-form');
+            tunesForm.addEventListener('submit', event => {
+                event.preventDefault();
+
+                tunePlayer.stop();
+
+                const tuneId = tunesSelect.value;
+                const tune = tunes.find(x => x.id === tuneId);
+
+                if (tune) {
+                    tunePlayer.select(tune);
+                }
+            });
+        </script>
+    </body>
+</html>
