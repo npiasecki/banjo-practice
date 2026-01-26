@@ -13,22 +13,79 @@
                 filter: invert(1);
             }
 
-            #banjo-practice-note-workspace {
+            #banjo-practice-tab-workspace {
                 display: flex;
             }
 
-            .banjo-practice-note {
-                border: 1px solid black;
-                font-size: 24px;
-                margin-bottom: 5px;
-                margin-right: 5px;
-                padding: 5px;
-                text-align: center;
+            .banjo-practice-tab {
+                height: 175px;
+                font-size: 16px;
+                line-height: 16px;
+                position: relative;
+                width: 25px;
                 transition: background-color 0.1s;
             }
 
-            .banjo-practice-note.active {
+            .banjo-practice-tab-background {
+                background-image: repeating-linear-gradient(
+                        to bottom,
+                        #ccc 0px,
+                        #ccc 1px,
+                        transparent 1px,
+                        transparent 25px
+                );
+                background-size: 100% 25px;
+                height: 101px;
+                margin-top: 25px;
+                width: 25px;
+            }
+
+            .banjo-practice-tab-bar {
+                background-color: black;
+                position: absolute;
+                top: 25px;
+                left: 10px;
+                width: 5px;
+                height: 101px;
+            }
+
+            .banjo-practice-tab.active {
                 background-color: yellow;
+            }
+
+            .banjo-practice-tab-note {
+                font-weight: bold;
+                text-align: center;
+                position: absolute;
+                width: 25px;
+            }
+
+            .banjo-practice-tab-note.string-1 {
+                top: 17px;
+            }
+
+            .banjo-practice-tab-note.string-2 {
+                top: 42px;
+            }
+
+            .banjo-practice-tab-note.string-3 {
+                top: 67px;
+            }
+
+            .banjo-practice-tab-note.string-4 {
+                top: 92px;
+            }
+
+            .banjo-practice-tab-note.string-5 {
+                top: 117px;
+            }
+
+            .banjo-practice-tab-note-text {
+                position: absolute;
+                bottom: 0;
+                text-align: center;
+                font-size: 12px;
+                width: 25px;
             }
         </style>
     </head>
@@ -78,7 +135,7 @@
                 <div class="d-flex">
                     <form class="d-flex" id="banjo-practice-timer-form">
                         <div class="form-floating me-2" style="min-width: 10em;">
-                            <input id="banjo-practice-timer-duration" class="form-control me-2" type="number" min="15"
+                            <input id="banjo-practice-timer-duration" class="form-control me-2" type="number" min="1"
                                    max="60"
                                    value="20"
                                    required />
@@ -108,59 +165,123 @@
                 {
                     id: 'alternating-thumb-roll',
                     name: 'Alternating Thumb Roll',
-                    beats: [
+                    tabs: [
                         {
+                            type: 'bar'
+                        },
+                        {
+                            type: 'note',
                             string: 3,
                             fret: 0
                         },
                         {
+                            type: 'note',
                             string: 2,
                             fret: 0
                         },
                         {
+                            type: 'note',
                             string: 5,
                             fret: 0
                         },
                         {
+                            type: 'note',
                             string: 1,
                             fret: 0
                         },
                         {
+                            type: 'bar'
+                        },
+                        {
+                            type: 'note',
                             string: 4,
                             fret: 0
                         },
                         {
+                            type: 'note',
                             string: 2,
                             fret: 0
                         },
                         {
+                            type: 'note',
                             string: 5,
                             fret: 0
                         },
                         {
+                            type: 'note',
                             string: 1,
                             fret: 0
+                        },
+                        {
+                            type: 'bar'
+                        }
+                    ]
+                },
+                {
+                    id: 'fretting-d7',
+                    name: 'Fretting D7',
+                    tabs: [
+                        {
+                            type: 'bar'
+                        },
+                        {
+                            type: 'note',
+                            string: 2,
+                            fret: 1
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 2
+                        },
+                        {
+                            type: 'note',
+                            string: 2,
+                            fret: 0,
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 0
+                        },
+                        {
+                            type: 'bar'
                         }
                     ]
                 }
             ];
 
-            // For simplicity's sake, let's give each beat a unique ID
+            // For simplicity's sake, let's give each tab a unique ID
             for (const tune of tunes) {
-                for (const beat of tune.beats) {
-                    beat.id = crypto.randomUUID();
+                for (const tab of tune.tabs) {
+                    tab.id = crypto.randomUUID();
+                }
+            }
+
+            class Transport {
+                constructor() {
+                    this.transport = Tone.getTransport();
+                }
+
+                setBpm(beatsPerMinute) {
+                    this.transport.bpm.value = beatsPerMinute;
+                }
+
+                start() {
+                    this.transport.start();
+                }
+
+                stop() {
+                    this.transport.stop();
                 }
             }
 
             class Metronome {
-                constructor() {
-
+                constructor(transport) {
+                    this.transport = transport;
                 }
 
-                start(beatsPerMinute) {
-                    this.transport = Tone.getTransport();
-                    this.transport.bpm.value = beatsPerMinute;
-
+                start() {
                     const instrument = new Tone.NoiseSynth({
                         envelope: {
                             attack: 0.001,
@@ -191,8 +312,9 @@
             }
 
             class Timer {
-                constructor(element) {
+                constructor(element, transport) {
                     this.element = element;
+                    this.transport = transport;
                 }
 
                 start(minutes) {
@@ -214,6 +336,8 @@
                     this.epoch = null;
                     this.seconds = null;
                     this.timer = null;
+
+                    this.transport.stop();
                 }
 
                 whenTimerTicked() {
@@ -243,7 +367,7 @@
                 }
 
                 select(tune) {
-                    const {beats, name} = tune;
+                    const {tabs, name} = tune;
 
                     // Reset our workspace
                     this.workspaceElement.replaceChildren();
@@ -254,21 +378,42 @@
                     this.workspaceElement.appendChild(tuneNameElement);
 
                     // Add our tab visualizer
+                    const tabWorkspaceElement = document.createElement('div');
+                    tabWorkspaceElement.id = 'banjo-practice-tab-workspace';
 
-                    // Add our note visualizer
-                    const noteWorkspaceElement = document.createElement('div');
-                    noteWorkspaceElement.id = 'banjo-practice-note-workspace';
+                    for (const tab of tabs) {
+                        const {id, string, type, fret} = tab;
 
-                    for (const beat of beats) {
-                        const {id, string, fret} = beat;
-                        const noteElement = document.createElement('div');
-                        noteElement.id = `banjo-practice-note-${id}`;
-                        noteElement.className = 'banjo-practice-note';
-                        noteElement.textContent = this.getNote(string, fret);
-                        noteWorkspaceElement.appendChild(noteElement);
+                        const tabElement = document.createElement('div');
+                        tabElement.id = `banjo-practice-tab-${id}`;
+                        tabElement.className = 'banjo-practice-tab';
+
+                        const tabBackgroundElement = document.createElement('div');
+                        tabBackgroundElement.className = 'banjo-practice-tab-background';
+                        tabElement.appendChild(tabBackgroundElement);
+
+                        if (type === 'bar') {
+                            const tabBarElement = document.createElement('div');
+                            tabBarElement.className = 'banjo-practice-tab-bar';
+                            tabElement.appendChild(tabBarElement);
+                        }
+
+                        if (type === 'note') {
+                            const tabNoteElement = document.createElement('div');
+                            tabNoteElement.className = `banjo-practice-tab-note string-${string}`;
+                            tabNoteElement.textContent = fret;
+                            tabBackgroundElement.appendChild(tabNoteElement);
+
+                            const noteElement = document.createElement('div');
+                            noteElement.className = 'banjo-practice-tab-note-text';
+                            noteElement.textContent = this.getNote(string, fret);
+                            tabElement.appendChild(noteElement);
+                        }
+
+                        tabWorkspaceElement.appendChild(tabElement);
                     }
 
-                    this.workspaceElement.appendChild(noteWorkspaceElement);
+                    this.workspaceElement.appendChild(tabWorkspaceElement);
 
                     // Create our instrument's strings
                     const instruments = [];
@@ -286,19 +431,20 @@
                     }
 
                     // Add the tune to our transport
-                    this.pattern = new Tone.Pattern(((time, beat) => {
-                        const {id, string, fret} = beat;
+                    this.pattern = new Tone.Pattern(((time, tab) => {
+                        const {id, string, fret} = tab;
                         const note = this.getNote(string, fret);
                         instruments[string - 1].triggerAttackRelease(note, '8n', time);
 
                         Tone.Draw.schedule(() => {
-                            const noteElement = document.getElementById(`banjo-practice-note-${id}`);
-                            noteElement.classList.add('active');
+                            const tabElement = document.getElementById(`banjo-practice-tab-${id}`);
+                            tabElement.classList.add('active');
+
                             setTimeout(() => {
-                                noteElement.classList.remove('active');
+                                tabElement.classList.remove('active');
                             }, 100);
                         }, time);
-                    }), beats).start(0);
+                    }), tabs.filter(tab => tab.type === 'note')).start(0);
                 }
 
                 stop() {
@@ -312,15 +458,19 @@
                 }
             }
 
+            // Let's create a central management place for the Tones library
+            const transport = new Transport();
+
             // Set up the metronome
-            const metronome = new Metronome();
+            const metronome = new Metronome(transport);
             const metronomeForm = document.getElementById('banjo-practice-metronome-form');
             const metronomeStopButton = document.getElementById('banjo-practice-metronome-stop-button');
 
             metronomeForm.addEventListener('submit', event => {
                 event.preventDefault();
                 const beatsPerMinute = document.getElementById('banjo-practice-metronome-beats-per-minute').value;
-                metronome.start(beatsPerMinute);
+                transport.setBpm(beatsPerMinute);
+                metronome.start();
                 metronomeStopButton.disabled = false;
             });
 
@@ -331,7 +481,9 @@
             });
 
             // Set up the timer
-            const timer = new Timer(document.getElementById('banjo-practice-timer-countdown'));
+            const timer = new Timer(
+                document.getElementById('banjo-practice-timer-countdown'),
+                transport);
             const timerForm = document.getElementById('banjo-practice-timer-form');
             timerForm.addEventListener('submit', event => {
                 event.preventDefault();
