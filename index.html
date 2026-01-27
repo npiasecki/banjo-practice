@@ -117,7 +117,7 @@
                         <div class="form-floating me-2" style="min-width: 10em;">
                             <input id="banjo-practice-metronome-beats-per-minute" class="form-control me-2"
                                    type="number"
-                                   min="30"
+                                   min="10"
                                    max="180"
                                    value="40"
                                    step="10"
@@ -186,22 +186,26 @@
                         {
                             type: 'note',
                             string: 3,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 2,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 5,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 1,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'bar'
@@ -209,22 +213,26 @@
                         {
                             type: 'note',
                             string: 4,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 2,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 5,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 1,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'bar'
@@ -241,22 +249,134 @@
                         {
                             type: 'note',
                             string: 2,
-                            fret: 1
+                            fret: 1,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 3,
-                            fret: 2
+                            fret: 2,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 2,
                             fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'note',
                             string: 3,
-                            fret: 0
+                            fret: 0,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'bar'
+                        }
+                    ]
+                },
+                {
+                    id: 'old-macdonald',
+                    name: 'Old MacDonald',
+                    tabs: [
+                        {
+                            type: 'bar'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 0,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 0,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 0,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 4,
+                            fret: 0,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'bar'
+                        },
+                        {
+                            type: 'note',
+                            string: 4,
+                            fret: 2,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 4,
+                            fret: 2,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 4,
+                            fret: 0,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'rest'
+                        },
+                        {
+                            type: 'bar'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 4,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 4,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 2,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 2,
+                            duration: '8n'
+                        },
+                        {
+                            type: 'bar'
+                        },
+                        {
+                            type: 'note',
+                            string: 3,
+                            fret: 0,
+                            duration: '8n.'
+                        },
+                        {
+                            type: 'rest'
+                        },
+                        {
+                            type: 'rest'
+                        },
+                        {
+                            type: 'note',
+                            string: 4,
+                            fret: 0,
+                            duration: '8n'
                         },
                         {
                             type: 'bar'
@@ -463,9 +583,9 @@
 
                     // Add the tune to our transport
                     this.pattern = new Tone.Pattern(((time, tab) => {
-                        const {id, string, fret} = tab;
+                        const {id, string, fret, duration} = tab;
                         const note = this.getNote(string, fret);
-                        instruments[string - 1].triggerAttackRelease(note, '8n', time);
+                        instruments[string - 1].triggerAttackRelease(note, duration, time);
 
                         Tone.Draw.schedule(() => {
                             const tabElement = document.getElementById(`banjo-practice-tab-${id}`);
@@ -475,7 +595,7 @@
                                 tabElement.classList.remove('active');
                             }, 100);
                         }, time);
-                    }), tabs.filter(tab => tab.type === 'note')).start(0);
+                    }), tabs.filter(tab => tab.type === 'note' || tab.type === 'rest')).start(0);
                 }
 
                 stop() {
