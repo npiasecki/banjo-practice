@@ -15,6 +15,11 @@
 
             #banjo-practice-tab-workspace {
                 display: flex;
+                flex-wrap: wrap;
+            }
+
+            .banjo-practice-tab-bar-wrapper {
+                display: flex;
             }
 
             .banjo-practice-tab {
@@ -532,6 +537,8 @@
                     const tabWorkspaceElement = document.createElement('div');
                     tabWorkspaceElement.id = 'banjo-practice-tab-workspace';
 
+                    let tabBarWrapper = null;
+
                     for (const tab of tabs) {
                         const {id, string, type, fret} = tab;
 
@@ -544,6 +551,14 @@
                         tabElement.appendChild(tabBackgroundElement);
 
                         if (type === 'bar') {
+                            if (tabBarWrapper) {
+                               
+                            }
+
+                            tabBarWrapper = document.createElement('div');
+                            tabBarWrapper.className = 'banjo-practice-tab-bar-wrapper';
+                            tabWorkspaceElement.appendChild(tabBarWrapper);
+
                             const tabBarElement = document.createElement('div');
                             tabBarElement.className = 'banjo-practice-tab-bar';
                             tabElement.appendChild(tabBarElement);
@@ -561,7 +576,12 @@
                             tabElement.appendChild(noteElement);
                         }
 
-                        tabWorkspaceElement.appendChild(tabElement);
+                        if (tabBarWrapper === null) {
+                            alert('Bar missing');
+                            return;
+                        }
+
+                        tabBarWrapper.appendChild(tabElement);
                     }
 
                     this.workspaceElement.appendChild(tabWorkspaceElement);
@@ -583,9 +603,12 @@
 
                     // Add the tune to our transport
                     this.pattern = new Tone.Pattern(((time, tab) => {
-                        const {id, string, fret, duration} = tab;
-                        const note = this.getNote(string, fret);
-                        instruments[string - 1].triggerAttackRelease(note, duration, time);
+                        const {id, string, fret, duration, type} = tab;
+
+                        if (type === 'note') {
+                            const note = this.getNote(string, fret);
+                            instruments[string - 1].triggerAttackRelease(note, duration, time);
+                        }
 
                         Tone.Draw.schedule(() => {
                             const tabElement = document.getElementById(`banjo-practice-tab-${id}`);
